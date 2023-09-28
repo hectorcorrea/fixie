@@ -1,0 +1,5 @@
+# ignore the Mac internal file
+.DS_Store
+
+# ignore the executable
+fixie
