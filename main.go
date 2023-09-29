@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -69,7 +69,7 @@ func processFiles() {
 	hasBlogPosts := len(links) > 0
 	if hasBlogPosts {
 		fmt.Printf("Creating: %s\r\n", blogFile)
-		sort.Strings(links)
+		slices.Reverse(links)
 		content := strings.Join(links, "\r\n")
 		md2HtmlFile(layout, content, blogFile)
 	}
