@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 )
 
@@ -35,7 +34,8 @@ func main() {
 
 func processFiles() {
 	layout := readFile(layoutFile)
-	links := []string{}
+	// links := []string{}
+	blogPosts := []BlogPost{}
 
 	err := filepath.WalkDir(".", func(fileName string, d fs.DirEntry, err error) error {
 		if filepath.Ext(fileName) != ".md" || fileName == "README.md" {
@@ -48,16 +48,15 @@ func processFiles() {
 		} else {
 			fmt.Printf("Processing file: %s\r\n", fileName)
 		}
+
+		// Create the HTML version of the Markdown file
 		content := readFile(fileName)
 		htmlFile := strings.TrimSuffix(fileName, ".md") + ".html"
 		md2HtmlFile(layout, content, htmlFile)
 
 		if isBlog {
-			linkUrl := "/" + strings.TrimSuffix(fileName, ".md")
-			defaultTitle := strings.TrimSuffix(filepath.Base(fileName), ".md")
-			linkTitle := mdTitle(content, defaultTitle)
-			link := fmt.Sprintf("[%s](%s)", linkTitle, linkUrl)
-			links = append(links, link)
+			blogPost := BlogPost{Filename: fileName, Content: content}
+			blogPosts = append(blogPosts, blogPost)
 		}
 		return nil
 	})
@@ -66,11 +65,14 @@ func processFiles() {
 		fmt.Printf("Error: %s", err)
 	}
 
-	hasBlogPosts := len(links) > 0
+	hasBlogPosts := len(blogPosts) > 0
 	if hasBlogPosts {
+		// Create the blog list page
 		fmt.Printf("Creating: %s\r\n", blogFile)
-		slices.Reverse(links)
-		content := strings.Join(links, "\r\n")
+		content := ""
+		for _, blog := range SortDescending(blogPosts) {
+			content += blog.LinkMarkdown() + "\r\n"
+		}
 		md2HtmlFile(layout, content, blogFile)
 	}
 
@@ -96,25 +98,6 @@ func mdTitle(content string, defaultTitle string) string {
 		return title
 	}
 	return defaultTitle
-}
-
-func walk(s string, d fs.DirEntry, err error) error {
-	if err != nil {
-		return err
-	}
-	if !d.IsDir() {
-		println(s)
-	}
-	return nil
-}
-
-func readFile(filename string) string {
-	bytes, _ := os.ReadFile(filename)
-	return string(bytes)
-}
-
-func saveFile(filename string, content string) {
-	os.WriteFile(filename, []byte(content), 0644)
 }
 
 func showSyntax() {
