@@ -34,29 +34,24 @@ func main() {
 
 func processFiles() {
 	layout := readFile(layoutFile)
-	// links := []string{}
-	blogPosts := []BlogPost{}
+	blogPosts := BlogPosts{}
 
 	err := filepath.WalkDir(".", func(fileName string, d fs.DirEntry, err error) error {
 		if filepath.Ext(fileName) != ".md" || fileName == "README.md" {
 			return nil
 		}
 
-		isBlog := strings.HasPrefix(fileName, "blog/")
-		if isBlog {
-			fmt.Printf("Processing blog post: %s\r\n", fileName)
-		} else {
-			fmt.Printf("Processing file: %s\r\n", fileName)
-		}
+		fmt.Printf("Processing file: %s\r\n", fileName)
 
 		// Create the HTML version of the Markdown file
 		content := readFile(fileName)
 		htmlFile := strings.TrimSuffix(fileName, ".md") + ".html"
 		md2HtmlFile(layout, content, htmlFile)
 
+		isBlog := strings.HasPrefix(fileName, "blog/")
 		if isBlog {
 			blogPost := BlogPost{Filename: fileName, Content: content}
-			blogPosts = append(blogPosts, blogPost)
+			blogPosts.Append(blogPost)
 		}
 		return nil
 	})
@@ -65,17 +60,7 @@ func processFiles() {
 		fmt.Printf("Error: %s", err)
 	}
 
-	hasBlogPosts := len(blogPosts) > 0
-	if hasBlogPosts {
-		// Create the blog list page
-		fmt.Printf("Creating: %s\r\n", blogFile)
-		content := ""
-		for _, blog := range SortDescending(blogPosts) {
-			content += blog.LinkMarkdown() + "\r\n"
-		}
-		md2HtmlFile(layout, content, blogFile)
-	}
-
+	blogPosts.CreateHomepage(layout, blogFile)
 	fmt.Printf("Done\r\n")
 }
 

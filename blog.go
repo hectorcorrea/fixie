@@ -13,11 +13,38 @@ type BlogPost struct {
 	Content  string
 }
 
-func SortDescending(blogPosts []BlogPost) []BlogPost {
-	slices.SortFunc(blogPosts, func(a, b BlogPost) int {
+type BlogPosts []BlogPost
+
+func (blogs BlogPosts) SortDescending() {
+	slices.SortFunc(blogs, func(a, b BlogPost) int {
 		return cmp.Compare(b.DateCreated(), a.DateCreated())
 	})
-	return blogPosts
+}
+
+func (blogs *BlogPosts) Append(blog BlogPost) {
+	// https://stackoverflow.com/a/24726368/446681
+	*blogs = append(*blogs, blog)
+}
+
+func (blogs BlogPosts) Empty() bool {
+	return len(blogs) == 0
+}
+
+func (blogs BlogPosts) Content() string {
+	content := ""
+	blogs.SortDescending()
+	for _, blog := range blogs {
+		content += blog.LinkMarkdown() + "\r\n"
+	}
+	return content
+}
+
+func (blogs BlogPosts) CreateHomepage(layout string, filename string) {
+	if len(blogs) == 0 {
+		return
+	}
+	fmt.Printf("Creating: %s\r\n", blogFile)
+	md2HtmlFile(layout, blogs.Content(), filename)
 }
 
 func (b BlogPost) DateCreated() string {
