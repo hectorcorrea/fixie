@@ -26,12 +26,8 @@ func (blogs *BlogPosts) Append(blog BlogPost) {
 	*blogs = append(*blogs, blog)
 }
 
-func (blogs BlogPosts) Empty() bool {
-	return len(blogs) == 0
-}
-
 func (blogs BlogPosts) Content() string {
-	content := ""
+	content := "# Blog Posts\r\n"
 	blogs.SortDescending()
 	for _, blog := range blogs {
 		content += blog.LinkMarkdown() + "\r\n"
@@ -43,16 +39,39 @@ func (blogs BlogPosts) CreateHomepage(layout string, filename string) {
 	if len(blogs) == 0 {
 		return
 	}
-	fmt.Printf("Creating: %s\r\n", blogFile)
-	md2HtmlFile(layout, blogs.Content(), filename)
+	fmt.Printf("Creating blog homepage: %s\r\n", filename)
+	html := md2Html(layout, blogs.Content())
+	saveFile(filename, html)
+}
+
+func (blogs BlogPosts) CreateRssPage(meta SiteMeta, filename string) {
+	if len(blogs) == 0 {
+		return
+	}
+	fmt.Printf("Creating blog RSS: %s\r\n", filename)
+
+	rss := NewRss(meta.Title, meta.Description, meta.Link)
+	for _, blog := range blogs {
+		rss.Add(blog.Title(), blog.Summary(), blog.LinkUrl(), blog.DateCreated())
+	}
+	xml, err := rss.ToXml()
+	if err != nil {
+		fmt.Printf("ERROR producing RSS file: %s\r\n", err)
+	}
+	saveFile(filename, xml)
 }
 
 func (b BlogPost) DateCreated() string {
 	date := dateFromFilename(b.Filename)
 	if date == "" {
-		date = "1900-01-01"
+		fmt.Printf("No created date found for blog: %s\r\n", b.Filename)
+		return "1900-01-01"
 	}
 	return date
+}
+
+func (b BlogPost) Summary() string {
+	return "TODO"
 }
 
 func (b BlogPost) DefaultTitle() string {

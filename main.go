@@ -11,10 +11,20 @@ import (
 
 const layoutFile = "./layout.html"
 const blogFile = "./blog/index.html"
+const rssFile = "./blog/rss.xml"
 
 var port int
 var serverMode bool
 var parser MarkdownParser
+var layout string
+var blogs BlogPosts
+
+type SiteMeta struct {
+	Title       string
+	Author      string
+	Description string
+	Link        string
+}
 
 func init() {
 	flag.IntVar(&port, "port", 9001, "Listening port when on server mode")
@@ -29,67 +39,72 @@ func main() {
 		server(port)
 		os.Exit(0)
 	}
-	processFiles()
-}
 
-func processFiles() {
-	layout := readFile(layoutFile)
-	blogPosts := BlogPosts{}
+	blogs = BlogPosts{}
+	layout = readFile(layoutFile)
+	meta := htmlMeta(layout)
+	processMarkdownFiles()
+	blogs.CreateHomepage(layout, blogFile)
+	blogs.CreateRssPage(meta, rssFile)
 
-	err := filepath.WalkDir(".", func(fileName string, d fs.DirEntry, err error) error {
-		if filepath.Ext(fileName) != ".md" || fileName == "README.md" {
-			return nil
-		}
-
-		fmt.Printf("Processing file: %s\r\n", fileName)
-
-		// Create the HTML version of the Markdown file
-		content := readFile(fileName)
-		htmlFile := strings.TrimSuffix(fileName, ".md") + ".html"
-		md2HtmlFile(layout, content, htmlFile)
-
-		isBlog := strings.HasPrefix(fileName, "blog/")
-		if isBlog {
-			blogPost := BlogPost{Filename: fileName, Content: content}
-			blogPosts.Append(blogPost)
-		}
-		return nil
-	})
-
-	if err != nil {
-		fmt.Printf("Error: %s", err)
-	}
-
-	blogPosts.CreateHomepage(layout, blogFile)
 	fmt.Printf("Done\r\n")
 }
 
-func md2Html(layout string, content string) string {
-	contentHtml := parser.ToHtml(content)
-	if layout == "" {
-		return contentHtml
+func processMarkdownFiles() {
+	fmt.Printf("Processing .md files...\r\n")
+	err := filepath.WalkDir(".", processFile)
+	if err != nil {
+		fmt.Printf("Error: %s", err)
 	}
-	return strings.Replace(layout, "{{ content }}", contentHtml, 1)
 }
 
-func md2HtmlFile(layout string, content string, htmlFile string) {
-	html := md2Html(layout, content)
-	saveFile(htmlFile, html)
-}
-
-func mdTitle(content string, defaultTitle string) string {
-	title := parser.Title(content)
-	if title != "" {
-		return title
+func processFile(fileName string, d fs.DirEntry, err error) error {
+	if filepath.Ext(fileName) != ".md" || fileName == "README.md" {
+		return nil
 	}
-	return defaultTitle
+
+	// Create the HTML version of the Markdown file
+	fmt.Printf("  %s\r\n", fileName)
+	content := readFile(fileName)
+	md2HtmlFile(fileName, layout)
+
+	// Keep track of blog posts (used for the blog homepage later on)
+	isBlog := strings.HasPrefix(fileName, "blog/")
+	if isBlog {
+		blogPost := BlogPost{Filename: fileName, Content: content}
+		blogs.Append(blogPost)
+	}
+	return nil
 }
 
 func showSyntax() {
 	fmt.Printf("fixie - a one gear blog engine\r\n")
 	flag.PrintDefaults()
 	fmt.Printf(`
-NOTES:
+Process all markdown files (.md) on the current directory and generates the HTML version
+for each of them.
+
+Fixie is very opinioned.
+
+If there is a layout.html on the current folder this file will be used as the layout for
+the generated HTML files. The layout.html file must include a {{CONTENT}} token where
+you expect the content of each Markdown file to be inserted.
+
+Files under the blog folder are considered blog posts and will be handled slightly
+different. They will be converted from Markdown to HTML using the same layout as the one
+for all other files, but also
+
+1. The title of each blog post is taken from the first line of the Markdown if and only if
+the first line is a H1 Heading (e.g. # My Blog Post). Otherwise the file name is used as
+the title.
+
+2. A file /blog/index.html will created with a list of all the files processed sorted
+descending by created date. The created date for blog posts is calculated from the file
+name or the folder for each file. If the file name starts with a date in the format
+YYYY-MM-DD this will be used as the created date for the blog post. If the file is
+inside a folder that starts with YYYY-MM-DD that will be used as the created date.
+
+3. An blog.rss file will generated for all blog posts processed.
 `)
 	fmt.Printf("\r\n")
 	fmt.Printf("\r\n")
