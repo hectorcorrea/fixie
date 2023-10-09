@@ -157,7 +157,7 @@ func substr(line string, i int) string {
 	if i >= len(line) {
 		return ""
 	}
-	return line[i:len(line)]
+	return line[i:]
 }
 
 func (p MarkdownParser) isPreTerminal(line string) bool {

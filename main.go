@@ -65,14 +65,16 @@ func processFile(fileName string, d fs.DirEntry, err error) error {
 
 	// Create the HTML version of the Markdown file
 	fmt.Printf("  %s\r\n", fileName)
-	content := readFile(fileName)
-	md2HtmlFile(fileName, layout)
 
 	// Keep track of blog posts (used for the blog homepage later on)
 	isBlog := strings.HasPrefix(fileName, "blog/")
 	if isBlog {
+		content := readFile(fileName)
 		blogPost := BlogPost{Filename: fileName, Content: content}
 		blogs.Append(blogPost)
+		md2HtmlFile(fileName, layout)
+	} else {
+		md2HtmlFile(fileName, layout)
 	}
 	return nil
 }
