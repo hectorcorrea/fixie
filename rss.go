@@ -76,11 +76,12 @@ func NewRss(title, description, link string) Rss {
 
 func (rss *Rss) Add(title, description, url, pubDate string) {
 	guid := ItemGuid{Link: url, PermaLink: true}
+	pubDateTime := pubDate + " 00:00:00 +0000 UTC"
 	item := Item{
 		Title:       title,
 		Description: description,
 		Guid:        guid,
-		PubDate:     dateRFC1123Z(pubDate),
+		PubDate:     dateRFC1123Z(pubDateTime),
 	}
 	rss.Channel.ItemList = append(rss.Channel.ItemList, item)
 }
