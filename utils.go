@@ -63,9 +63,15 @@ func dateFromFilename(fullPath string) string {
 }
 
 func dateFromString(value string) string {
-	reDate := regexp.MustCompile("\\d\\d\\d\\d\\-\\d\\d\\-\\d\\d")
+	reDate := regexp.MustCompile(`\d\d\d\d\-\d\d\-\d\d`)
 	match := string(reDate.Find([]byte(value)))
 	return match
+}
+
+func sequenceFromString(value string) string {
+	reDate := regexp.MustCompile(`\d\d\d\d\-\d\d\-\d\d\-\d\d\d\d\d`)
+	match := string(reDate.Find([]byte(value)))
+	return match[11:]
 }
 
 // Extract site metadata from an HTML page

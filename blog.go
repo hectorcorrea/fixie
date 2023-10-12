@@ -100,6 +100,10 @@ func (b BlogPost) OldId() int {
 	return oldId
 }
 
+func (b BlogPost) SequenceNumber() string {
+	return sequenceFromString(filepath.Dir(b.Filename))
+}
+
 // Creates the redirect files required to support legacy URLs indicated in the metadata file
 func (b BlogPost) createRedirectFiles() bool {
 	oldId := b.OldId()
@@ -112,7 +116,13 @@ func (b BlogPost) createRedirectFiles() bool {
 	redirectFile2 := fmt.Sprintf("%s/index.html", redirectFolder)
 
 	content := `<head><meta http-equiv="Refresh" content="0; URL=URL-GOES-HERE" /></head>`
-	newUrl := fmt.Sprintf("/blog/%s/%s", b.DateCreated(), b.Metadata.Slug)
+
+	sequenceNumber := b.SequenceNumber()
+	folder := b.DateCreated()
+	if sequenceNumber != "" {
+		folder += "-" + sequenceNumber
+	}
+	newUrl := fmt.Sprintf("/blog/%s/%s", folder, b.Metadata.Slug)
 	content = strings.Replace(content, "URL-GOES-HERE", newUrl, 1)
 
 	createDir(redirectFolder)
