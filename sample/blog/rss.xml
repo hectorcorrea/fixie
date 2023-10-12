@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+      <channel>
+          <title>Fixie</title>
+          <description>A one gear blog engine</description>
+          <link>https://github.com/hectorcorrea/fixie</link>
+          <generator>https://github.com/hectorcorrea/fixie</generator>
+          <atom:link href="https://github.com/hectorcorrea/fixie" rel="self" type="application/rss+xml"></atom:link>
+          <item>
+              <title>topic for 2023</title>
+              <description>TODO</description>
+              <guid isPermaLink="true">/blog/2023-04-26-00002/topic-for-2023</guid>
+              <pubDate>Wed, 26 Apr 2023 00:00:00 +0000</pubDate>
+          </item>
+          <item>
+              <title>Second</title>
+              <description>TODO</description>
+              <guid isPermaLink="true">/blog/2022-12-08/two</guid>
+              <pubDate>Thu, 08 Dec 2022 00:00:00 +0000</pubDate>
+          </item>
+          <item>
+              <title>One</title>
+              <description>TODO</description>
+              <guid isPermaLink="true">/blog/2020-11-19/one</guid>
+              <pubDate>Thu, 19 Nov 2020 00:00:00 +0000</pubDate>
+          </item>
+      </channel>
+  </rss>
