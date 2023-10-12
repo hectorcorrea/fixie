@@ -30,7 +30,7 @@ func (blogs BlogPosts) Content() string {
 	content := "# Blog Posts\r\n"
 	blogs.SortDescending()
 	for _, blog := range blogs {
-		content += blog.LinkMarkdown() + "\r\n"
+		content += "* " + blog.LinkMarkdown() + "\r\n"
 	}
 	return content
 }
