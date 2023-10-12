@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -28,6 +29,14 @@ func mdTitle(content string, defaultTitle string) string {
 		return title
 	}
 	return defaultTitle
+}
+
+func fileExist(filename string) bool {
+	_, err := os.Stat(filename)
+	if errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
 }
 
 func readFile(filename string) string {
