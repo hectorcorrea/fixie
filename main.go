@@ -29,6 +29,7 @@ type SiteMeta struct {
 func init() {
 	flag.IntVar(&port, "port", 9001, "Listening port when on server mode")
 	flag.BoolVar(&serverMode, "server", false, "Pass true to launch a local web server")
+
 	flag.Usage = func() { showSyntax() }
 	flag.Parse()
 }
@@ -42,10 +43,10 @@ func main() {
 
 	blogs = BlogPosts{}
 	layout = readFile(layoutFile)
-	meta := htmlMeta(layout)
+	siteMetadata := htmlMeta(layout)
 	processMarkdownFiles()
 	blogs.CreateHomepage(layout, blogFile)
-	blogs.CreateRssPage(meta, rssFile)
+	blogs.CreateRssPage(siteMetadata, rssFile)
 
 	fmt.Printf("Done\r\n")
 }
@@ -58,23 +59,23 @@ func processMarkdownFiles() {
 	}
 }
 
-func processFile(fileName string, d fs.DirEntry, err error) error {
-	if filepath.Ext(fileName) != ".md" || fileName == "README.md" {
+func processFile(filename string, d fs.DirEntry, err error) error {
+	if filepath.Ext(filename) != ".md" || filename == "README.md" {
 		return nil
 	}
 
 	// Create the HTML version of the Markdown file
-	fmt.Printf("  %s\r\n", fileName)
+	fmt.Printf("  %s\r\n", filename)
 
 	// Keep track of blog posts (used for the blog homepage later on)
-	isBlog := strings.HasPrefix(fileName, "blog/")
+	isBlog := strings.HasPrefix(filename, "blog/")
 	if isBlog {
-		content := readFile(fileName)
-		blogPost := BlogPost{Filename: fileName, Content: content}
+		blogPost := LoadBlogPost(filename)
+		blogPost.createRedirectFiles()
 		blogs.Append(blogPost)
-		md2HtmlFile(fileName, layout)
+		md2HtmlFile(filename, layout)
 	} else {
-		md2HtmlFile(fileName, layout)
+		md2HtmlFile(filename, layout)
 	}
 	return nil
 }

@@ -1,73 +1,56 @@
 package main
 
 import (
-	"cmp"
+	"encoding/xml"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
-	"slices"
+	"strconv"
 	"strings"
 )
 
 type BlogPost struct {
 	Filename string
 	Content  string
+	Metadata Metadata
 }
 
-type BlogPosts []BlogPost
-
-func (blogs BlogPosts) SortDescending() {
-	slices.SortFunc(blogs, func(a, b BlogPost) int {
-		return cmp.Compare(b.DateCreated(), a.DateCreated())
-	})
+type Metadata struct {
+	Title     string  `xml:"title"`     // Not used
+	Slug      string  `xml:"slug"`      // Used when calculating redirects for legacy posts
+	Summary   string  `xml:"summary"`   // Not used
+	CreatedOn string  `xml:"createdOn"` // Used when file name does not have a date
+	UpdatedOn string  `xml:"updatedOn"` // Not used
+	PostedOn  string  `xml:"postedOn"`  // Not used
+	Fields    []Field `xml:"fields"`    // Used when calculating redirects for legacy posts
 }
 
-func (blogs *BlogPosts) Append(blog BlogPost) {
-	// https://stackoverflow.com/a/24726368/446681
-	*blogs = append(*blogs, blog)
+type Field struct {
+	Name  string `xml:"name"`
+	Value string `xml:"value"`
 }
 
-func (blogs BlogPosts) Content() string {
-	content := "# Blog Posts\r\n"
-	blogs.SortDescending()
-	for _, blog := range blogs {
-		content += "* " + blog.LinkMarkdown() + "\r\n"
-	}
-	return content
-}
+func LoadBlogPost(filename string) BlogPost {
+	content := readFile(filename)
 
-func (blogs BlogPosts) CreateHomepage(layout string, filename string) {
-	if len(blogs) == 0 {
-		return
-	}
-	fmt.Printf("Creating blog homepage: %s\r\n", filename)
-	html := md2Html(layout, blogs.Content())
-	saveFile(filename, html)
-}
-
-func (blogs BlogPosts) CreateRssPage(meta SiteMeta, filename string) {
-	if len(blogs) == 0 {
-		return
-	}
-	fmt.Printf("Creating blog RSS: %s\r\n", filename)
-
-	rss := NewRss(meta.Title, meta.Description, meta.Link)
-	for _, blog := range blogs {
-		rss.Add(blog.Title(), blog.Summary(), blog.LinkUrl(), blog.DateCreated())
-	}
-	xml, err := rss.ToXml()
-	if err != nil {
-		fmt.Printf("ERROR producing RSS file: %s\r\n", err)
-	}
-	saveFile(filename, xml)
+	blog := BlogPost{Filename: filename, Content: content}
+	blog.Metadata = blog.fetchMetadata()
+	return blog
 }
 
 func (b BlogPost) DateCreated() string {
 	date := dateFromFilename(b.Filename)
-	if date == "" {
-		fmt.Printf("No created date found for blog: %s\r\n", b.Filename)
-		return "1900-01-01"
+	if date != "" {
+		return date
 	}
-	return date
+
+	if len(b.Metadata.CreatedOn) >= 10 {
+		// Use the date part (YYYY-MM-DD) from the metadata
+		return b.Metadata.CreatedOn[0:10]
+	}
+
+	return "1970-01-01"
 }
 
 func (b BlogPost) Summary() string {
@@ -88,4 +71,52 @@ func (b BlogPost) LinkUrl() string {
 
 func (b BlogPost) LinkMarkdown() string {
 	return fmt.Sprintf("[%s](%s)", b.Title(), b.LinkUrl())
+}
+
+func (b BlogPost) MetadataFile() string {
+	return strings.TrimSuffix(b.Filename, ".md") + ".xml"
+}
+
+func (b BlogPost) fetchMetadata() Metadata {
+	reader, err := os.Open(b.MetadataFile())
+	if err != nil {
+		return Metadata{}
+	}
+	defer reader.Close()
+
+	byteValue, err := io.ReadAll(reader)
+	var metadata Metadata
+	xml.Unmarshal(byteValue, &metadata)
+	return metadata
+}
+
+func (b BlogPost) OldId() int {
+	oldId := 0
+	for _, field := range b.Metadata.Fields {
+		if field.Name == "oldId" {
+			oldId, _ = strconv.Atoi(field.Value)
+		}
+	}
+	return oldId
+}
+
+// Creates the redirect files required to support legacy URLs indicated in the metadata file
+func (b BlogPost) createRedirectFiles() bool {
+	oldId := b.OldId()
+	if oldId == 0 {
+		return false
+	}
+
+	redirectFolder := fmt.Sprintf("./blog/%s", b.Metadata.Slug)
+	redirectFile1 := fmt.Sprintf("%s/%d.html", redirectFolder, oldId)
+	redirectFile2 := fmt.Sprintf("%s/index.html", redirectFolder)
+
+	content := `<head><meta http-equiv="Refresh" content="0; URL=URL-GOES-HERE" /></head>`
+	newUrl := fmt.Sprintf("/blog/%s/%s", b.DateCreated(), b.Metadata.Slug)
+	content = strings.Replace(content, "URL-GOES-HERE", newUrl, 1)
+
+	createDir(redirectFolder)
+	saveFile(redirectFile1, content)
+	saveFile(redirectFile2, content)
+	return true
 }

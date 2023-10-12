@@ -48,6 +48,10 @@ func saveFile(filename string, content string) {
 	os.WriteFile(filename, []byte(content), 0644)
 }
 
+func createDir(dirname string) {
+	os.MkdirAll(dirname, os.ModePerm)
+}
+
 func dateFromFilename(fullPath string) string {
 	// Get the date from the file name...
 	date := dateFromString(filepath.Base(fullPath))
