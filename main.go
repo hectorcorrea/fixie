@@ -15,16 +15,6 @@ const rssFile = "./blog/rss.xml"
 
 var port int
 var serverMode bool
-var parser MarkdownParser
-var layout string
-var blogs BlogPosts
-
-type SiteMeta struct {
-	Title       string
-	Author      string
-	Description string
-	Link        string
-}
 
 func init() {
 	flag.IntVar(&port, "port", 9001, "Listening port when on server mode")
@@ -35,53 +25,62 @@ func init() {
 }
 
 func main() {
-	fmt.Printf("fixie - a one gear blog engine\r\n")
+	fmt.Printf("fixie - a one gear static site generator\r\n\r\n")
 	if serverMode == true {
 		server(port)
 		os.Exit(0)
 	}
 
-	blogs = BlogPosts{}
-	layout = readFile(layoutFile)
-	siteMetadata := htmlMeta(layout)
 	processMarkdownFiles()
-	blogs.CreateHomepage(layout, blogFile)
-	blogs.CreateRssPage(siteMetadata, rssFile)
-
-	fmt.Printf("Done\r\n")
 }
 
 func processMarkdownFiles() {
+	layout := loadLayout(layoutFile)
+	siteMetadata := NewSiteMeta(layout)
+	blogs := BlogPosts{}
+
 	fmt.Printf("Processing .md files...\r\n")
-	err := filepath.WalkDir(".", processFile)
-	if err != nil {
-		fmt.Printf("Error: %s", err)
+	filepath.WalkDir(".", func(filename string, d fs.DirEntry, err error) error {
+		if filepath.Ext(filename) != ".md" || filename == "README.md" {
+			return nil
+		}
+
+		// Create the HTML version of the Markdown file
+		fmt.Printf("  %s\r\n", filename)
+		md2HtmlFile(filename, layout)
+
+		// Keep track of blog entries
+		isBlog := strings.HasPrefix(filename, "blog/")
+		if isBlog {
+			blogPost := LoadBlogPost(filename)
+			blogPost.createRedirectFiles()
+			blogs.Append(blogPost)
+		}
+		return nil
+	})
+
+	if len(blogs) == 0 {
+		fmt.Printf("No blog entries (./blog/) were found\r\n")
+	} else {
+		fmt.Printf("%d blog entries were processed\r\n", len(blogs))
+		blogs.CreateHomepage(layout, blogFile)
+		blogs.CreateRssPage(siteMetadata, rssFile)
 	}
+	return
 }
 
-func processFile(filename string, d fs.DirEntry, err error) error {
-	if filepath.Ext(filename) != ".md" || filename == "README.md" {
-		return nil
+func loadLayout(layoutFile string) string {
+	if fileExist(layoutFile) {
+		fmt.Printf("Using layout file: %s\r\n", layoutFile)
+		return readFile(layoutFile)
 	}
 
-	// Create the HTML version of the Markdown file
-	fmt.Printf("  %s\r\n", filename)
-
-	// Keep track of blog posts (used for the blog homepage later on)
-	isBlog := strings.HasPrefix(filename, "blog/")
-	if isBlog {
-		blogPost := LoadBlogPost(filename)
-		blogPost.createRedirectFiles()
-		blogs.Append(blogPost)
-		md2HtmlFile(filename, layout)
-	} else {
-		md2HtmlFile(filename, layout)
-	}
-	return nil
+	fmt.Printf("No layout file (%s) was found\r\n", layoutFile)
+	return ""
 }
 
 func showSyntax() {
-	fmt.Printf("fixie - a one gear blog engine\r\n")
+	fmt.Printf("fixie - a one gear static site generator\r\n")
 	flag.PrintDefaults()
 	fmt.Printf(`
 Process all markdown files (.md) on the current directory and generates the HTML version

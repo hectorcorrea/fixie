@@ -22,7 +22,12 @@ func (blogs *BlogPosts) Append(blog BlogPost) {
 func (blogs BlogPosts) Content() string {
 	content := "# Blog Posts\r\n"
 	blogs.SortDescending()
+	year := 0
 	for _, blog := range blogs {
+		if blog.YearCreated() != year {
+			content += fmt.Sprintf("## %d\r\n", blog.YearCreated())
+			year = blog.YearCreated()
+		}
 		content += "* " + blog.LinkMarkdown() + "\r\n"
 	}
 	return content

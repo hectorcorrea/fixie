@@ -53,6 +53,12 @@ func (b BlogPost) DateCreated() string {
 	return "1970-01-01"
 }
 
+func (b BlogPost) YearCreated() int {
+	yearString := b.DateCreated()[0:4]
+	year, _ := strconv.Atoi(yearString)
+	return year
+}
+
 func (b BlogPost) Summary() string {
 	return "TODO"
 }

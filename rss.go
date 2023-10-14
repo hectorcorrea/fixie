@@ -34,13 +34,12 @@ type AtomLink struct {
 }
 
 type Channel struct {
-	Title         string   `xml:"title"`
-	Description   string   `xml:"description"`
-	Link          string   `xml:"link"`
-	Generator     string   `xml:"generator"`
-	lastBuildDate string   `xml:"lastBuildDate"`
-	AtomLink      AtomLink `xml:"atom:link"`
-	ItemList      []Item   `xml:"item"`
+	Title       string   `xml:"title"`
+	Description string   `xml:"description"`
+	Link        string   `xml:"link"`
+	Generator   string   `xml:"generator"`
+	AtomLink    AtomLink `xml:"atom:link"`
+	ItemList    []Item   `xml:"item"`
 }
 
 type Rss struct {
