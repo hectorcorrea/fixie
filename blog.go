@@ -17,13 +17,14 @@ type BlogPost struct {
 }
 
 type Metadata struct {
-	Title     string  `xml:"title"`     // Not used
-	Slug      string  `xml:"slug"`      // Used when calculating redirects for legacy posts
-	Summary   string  `xml:"summary"`   // Not used
-	CreatedOn string  `xml:"createdOn"` // Used when file name does not have a date
-	UpdatedOn string  `xml:"updatedOn"` // Not used
-	PostedOn  string  `xml:"postedOn"`  // Not used
-	Fields    []Field `xml:"fields"`    // Used when calculating redirects for legacy posts
+	Title       string  `xml:"title"`     // Not used
+	Slug        string  `xml:"slug"`      // Used when calculating redirects for legacy posts
+	Summary     string  `xml:"summary"`   // Not used
+	CreatedOn   string  `xml:"createdOn"` // Used when file name does not have a date
+	UpdatedOn   string  `xml:"updatedOn"` // Not used
+	PostedOn    string  `xml:"postedOn"`  // Not used
+	OldSequence string  `xml:"oldSequence"`
+	Fields      []Field `xml:"fields"` // Used when calculating redirects for legacy posts
 }
 
 type Field struct {
@@ -53,8 +54,23 @@ func (b BlogPost) DateCreated() string {
 	return "1970-01-01"
 }
 
+func (b BlogPost) DatePosted() string {
+	if len(b.Metadata.PostedOn) >= 10 {
+		// Use the date part (YYYY-MM-DD) from the metadata
+		return b.Metadata.PostedOn[0:10]
+	}
+
+	return "1970-01-01"
+}
+
 func (b BlogPost) YearCreated() int {
 	yearString := b.DateCreated()[0:4]
+	year, _ := strconv.Atoi(yearString)
+	return year
+}
+
+func (b BlogPost) YearPosted() int {
+	yearString := b.DatePosted()[0:4]
 	year, _ := strconv.Atoi(yearString)
 	return year
 }
@@ -97,42 +113,43 @@ func (b BlogPost) fetchMetadata() Metadata {
 }
 
 func (b BlogPost) OldId() int {
-	oldId := 0
 	for _, field := range b.Metadata.Fields {
 		if field.Name == "oldId" {
-			oldId, _ = strconv.Atoi(field.Value)
+			oldId, _ := strconv.Atoi(field.Value)
+			return oldId
 		}
 	}
-	return oldId
-}
-
-func (b BlogPost) SequenceNumber() string {
-	return sequenceFromString(filepath.Dir(b.Filename))
+	return 0
 }
 
 // Creates the redirect files required to support legacy URLs indicated in the metadata file
+// Redirect legacy URLs
+//
+//	./blog/slug/index.html
+//	./blog/slug/10									(old id)
+//	./blog/slug/2008-11-25-00001		(date created + sequence)
+//
+// to new format
+//
+//	./blog/2008-11-30/slug					(date posted)
 func (b BlogPost) createRedirectFiles() bool {
-	oldId := b.OldId()
-	if oldId == 0 {
-		return false
-	}
-
-	redirectFolder := fmt.Sprintf("./blog/%s", b.Metadata.Slug)
-	redirectFile1 := fmt.Sprintf("%s/%d.html", redirectFolder, oldId)
-	redirectFile2 := fmt.Sprintf("%s/index.html", redirectFolder)
-
+	newUrl := fmt.Sprintf("/blog/%s/%s", b.DatePosted(), b.Metadata.Slug)
 	content := `<head><meta http-equiv="Refresh" content="0; URL=URL-GOES-HERE" /></head>`
-
-	sequenceNumber := b.SequenceNumber()
-	folder := b.DateCreated()
-	if sequenceNumber != "" {
-		folder += "-" + sequenceNumber
-	}
-	newUrl := fmt.Sprintf("/blog/%s/%s", folder, b.Metadata.Slug)
 	content = strings.Replace(content, "URL-GOES-HERE", newUrl, 1)
 
+	redirectFile1 := fmt.Sprintf("./blog/%s/index.html", b.Metadata.Slug)
+	redirectFolder := fmt.Sprintf("./blog/%s", b.Metadata.Slug)
 	createDir(redirectFolder)
 	saveFile(redirectFile1, content)
-	saveFile(redirectFile2, content)
+
+	if b.OldId() != 0 {
+		redirectFile2 := fmt.Sprintf("./blog/%s/%d.html", b.Metadata.Slug, b.OldId())
+		saveFile(redirectFile2, content)
+	}
+
+	if b.Metadata.OldSequence != "" {
+		redirectFile3 := fmt.Sprintf("./blog/%s/%s-%s.html", b.Metadata.Slug, b.DateCreated(), b.Metadata.OldSequence)
+		saveFile(redirectFile3, content)
+	}
 	return true
 }

@@ -127,7 +127,7 @@ func (p MarkdownParser) ToHtml(markdown string) string {
 func (p MarkdownParser) Title(markdown string) string {
 	lines := strings.Split(markdown, "\n")
 	if len(lines) > 0 && p.isH1(lines[0]) {
-		return strings.TrimPrefix(lines[0], "# ")
+		return chomp(strings.TrimPrefix(lines[0], "# "))
 	}
 	return ""
 }
@@ -158,6 +158,13 @@ func substr(line string, i int) string {
 		return ""
 	}
 	return line[i:]
+}
+
+func chomp(text string) string {
+	text = strings.TrimSuffix(text, "\r\n")
+	text = strings.TrimSuffix(text, "\r")
+	text = strings.TrimSuffix(text, "\n")
+	return text
 }
 
 func (p MarkdownParser) isPreTerminal(line string) bool {

@@ -73,7 +73,10 @@ func dateFromString(value string) string {
 func sequenceFromString(value string) string {
 	reDate := regexp.MustCompile(`\d\d\d\d\-\d\d\-\d\d\-\d\d\d\d\d`)
 	match := string(reDate.Find([]byte(value)))
-	return match[11:]
+	if len(match) >= 12 {
+		return match[11:]
+	}
+	return ""
 }
 
 // Returs the first match of an regex in the provided text
