@@ -10,7 +10,7 @@ type BlogPosts []BlogPost
 
 func (blogs BlogPosts) SortDescending() {
 	slices.SortFunc(blogs, func(a, b BlogPost) int {
-		return cmp.Compare(b.DateCreated(), a.DateCreated())
+		return cmp.Compare(b.DatePosted(), a.DatePosted())
 	})
 }
 
@@ -24,9 +24,9 @@ func (blogs BlogPosts) Content() string {
 	blogs.SortDescending()
 	year := 0
 	for _, blog := range blogs {
-		if blog.YearCreated() != year {
-			content += fmt.Sprintf("## %d\r\n", blog.YearCreated())
-			year = blog.YearCreated()
+		if blog.YearPosted() != year {
+			content += fmt.Sprintf("## %d\r\n", blog.YearPosted())
+			year = blog.YearPosted()
 		}
 		content += "* " + blog.LinkMarkdown() + "\r\n"
 	}
@@ -50,7 +50,7 @@ func (blogs BlogPosts) CreateRssPage(meta SiteMeta, filename string) {
 
 	rss := NewRss(meta.Title, meta.Description, meta.Link)
 	for _, blog := range blogs {
-		rss.Add(blog.Title(), blog.Summary(), blog.LinkUrl(), blog.DateCreated())
+		rss.Add(blog.Title(), blog.Summary(), blog.LinkUrl(), blog.DatePosted())
 	}
 	xml, err := rss.ToXml()
 	if err != nil {

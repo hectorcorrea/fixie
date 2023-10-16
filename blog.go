@@ -61,6 +61,12 @@ func (b BlogPost) DatePosted() string {
 		return b.Metadata.PostedOn[0:10]
 	}
 
+	date := dateFromFilename(b.Filename)
+	if date != "" {
+		// Use the data part from the filename
+		return date
+	}
+
 	return "1970-01-01"
 }
 
