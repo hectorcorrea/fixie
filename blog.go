@@ -41,14 +41,15 @@ func LoadBlogPost(filename string) BlogPost {
 }
 
 func (b BlogPost) DateCreated() string {
-	date := dateFromFilename(b.Filename)
-	if date != "" {
-		return date
-	}
-
 	if len(b.Metadata.CreatedOn) >= 10 {
 		// Use the date part (YYYY-MM-DD) from the metadata
 		return b.Metadata.CreatedOn[0:10]
+	}
+
+	date := dateFromFilename(b.Filename)
+	if date != "" {
+		// Use the data part from the filename
+		return date
 	}
 
 	return "1970-01-01"
