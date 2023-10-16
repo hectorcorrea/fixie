@@ -180,7 +180,7 @@ func (p MarkdownParser) isPre(line string) bool {
 }
 
 func (p MarkdownParser) isQuote(line string) bool {
-	return strings.HasPrefix(line, "> ")
+	return strings.HasPrefix(line, "> ") || line == ">"
 }
 
 func (p MarkdownParser) isListItem(line string) bool {
