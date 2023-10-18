@@ -34,8 +34,9 @@ func server(port int) {
 
 	// Start the web server
 	webAddress := fmt.Sprintf("localhost:%d", port)
-	log.Printf("Listening for requests at: http://%s", webAddress)
-	log.Printf("Serving files from: %s", filePath)
+	fmt.Printf("\r\nLoading the local web server\r\n")
+	fmt.Printf("Listening for requests at: http://%s\r\n", webAddress)
+	fmt.Printf("Serving files from: %s\r\n", filePath)
 	err := http.ListenAndServe(webAddress, nil)
 	if err != nil {
 		log.Fatal("Failed to start the web server: ", err)

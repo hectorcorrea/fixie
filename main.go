@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -26,12 +25,10 @@ func init() {
 
 func main() {
 	fmt.Printf("fixie - a one gear static site generator\r\n\r\n")
+	processMarkdownFiles()
 	if serverMode == true {
 		server(port)
-		os.Exit(0)
 	}
-
-	processMarkdownFiles()
 }
 
 func processMarkdownFiles() {
