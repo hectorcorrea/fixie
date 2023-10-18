@@ -1,5 +1,7 @@
 # ignore the Mac internal file
 .DS_Store
 
-# ignore the executable
+# ignore the executables
 fixie
+fixie_linux
+fixie.exe
