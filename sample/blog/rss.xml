@@ -7,12 +7,6 @@
           <generator>https://github.com/hectorcorrea/fixie</generator>
           <atom:link href="https://github.com/hectorcorrea/fixie" rel="self" type="application/rss+xml"></atom:link>
           <item>
-              <title>topic for 2023</title>
-              <description>TODO</description>
-              <guid isPermaLink="true">/blog/2023-04-26-00002/topic-for-2023</guid>
-              <pubDate>Mon, 04 Sep 2023 00:00:00 +0000</pubDate>
-          </item>
-          <item>
               <title>Second</title>
               <description>TODO</description>
               <guid isPermaLink="true">/blog/2022-12-08/two</guid>
