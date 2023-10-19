@@ -111,13 +111,13 @@ func (p MarkdownParser) ToHtml(markdown string) string {
 		} else {
 			if p.pre {
 				// we use the original line in pre to preserve spaces
-				p.html += p.inline(line) + "\n"
+				p.html += p.inline(line, true) + "\n"
 			} else if p.quote {
-				p.html += p.inline(substr(l, 2)) + "<br/>\n"
+				p.html += p.inline(substr(l, 2), false) + "<br/>\n"
 			} else if p.li {
-				p.html += "<li>" + p.inline(substr(l, 2)) + "\n"
+				p.html += "<li>" + p.inline(substr(l, 2), false) + "\n"
 			} else {
-				p.html += "<p>" + p.inline(l) + "</p>\n"
+				p.html += "<p>" + p.inline(l, false) + "</p>\n"
 			}
 		}
 	}
@@ -187,7 +187,7 @@ func (p MarkdownParser) isListItem(line string) bool {
 	return strings.HasPrefix(line, "* ")
 }
 
-func (p MarkdownParser) inline(line string) string {
+func (p MarkdownParser) inline(line string, pre bool) string {
 	// TODO: encode & to &amp;
 	line = strings.Replace(line, "<", "&lt;", -1)
 	line = strings.Replace(line, ">", "&gt;", -1)
@@ -200,6 +200,10 @@ func (p MarkdownParser) inline(line string) string {
 	line = strings.Replace(line, "&lt;sup&gt;", "<sup>", -1)
 	line = strings.Replace(line, "&lt;/sup&gt;", "</sup>", -1)
 
+	if pre {
+		// don't do any extra processing if we are on code block
+		return line
+	}
 	line = reImg.ReplaceAllString(line, "<img src=\"$2\" alt=\"$1\" title=\"$1\" />")
 	line = reBold.ReplaceAllString(line, "<b>$2</b>")
 	line = reItalic.ReplaceAllString(line, "<i>$2</i>")
