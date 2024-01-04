@@ -11,6 +11,7 @@ import (
 const layoutFile = "./layout.html"
 const blogFile = "./blog/index.html"
 const rssFile = "./blog/rss.xml"
+const searchIndexFile = "searchIndex.js"
 
 var port int
 var serverMode bool
@@ -35,7 +36,6 @@ func processMarkdownFiles() {
 	layout := loadLayout(layoutFile)
 	siteMetadata := NewSiteMeta(layout)
 	blogs := BlogPosts{}
-	// toFix := BlogPosts{}
 
 	fmt.Printf("Processing .md files...\r\n")
 	filepath.WalkDir(".", func(filename string, d fs.DirEntry, err error) error {
@@ -53,20 +53,9 @@ func processMarkdownFiles() {
 			blogPost := LoadBlogPost(filename)
 			blogPost.createRedirectFiles()
 			blogs.Append(blogPost)
-
-			// if blogPost.YearCreated() != blogPost.YearPosted() {
-			// 	toFix = append(toFix, blogPost)
-			// }
 		}
 		return nil
 	})
-
-	// fmt.Printf("title, created, posted\r\n")
-	// fmt.Printf("======================\r\n")
-	// for _, b := range toFix {
-	// 	fmt.Printf("%s, %s, %s\r\n", b.Title(), b.DateCreated(), b.DatePosted())
-	// }
-	// fmt.Printf("======================\r\n")
 
 	if len(blogs) == 0 {
 		fmt.Printf("No blog entries (./blog/) were found\r\n")
@@ -74,6 +63,14 @@ func processMarkdownFiles() {
 		fmt.Printf("%d blog entries were processed\r\n", len(blogs))
 		blogs.CreateHomepage(layout, blogFile)
 		blogs.CreateRssPage(siteMetadata, rssFile)
+		//
+		//
+		//
+		// TODO: Include the pages that are not blogs on the index
+		//
+		//
+		//
+		blogs.CreateSearchIndex(searchIndexFile)
 	}
 	return
 }

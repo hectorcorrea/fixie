@@ -6,8 +6,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 type BlogPost struct {
@@ -104,6 +106,31 @@ func (b BlogPost) LinkMarkdown() string {
 
 func (b BlogPost) MetadataFile() string {
 	return strings.TrimSuffix(b.Filename, ".md") + ".xml"
+}
+
+func (b BlogPost) SearchText() string {
+	// Extract all alphanumeric words
+	plainText := ""
+	for _, c := range b.Content {
+		if unicode.IsLetter(c) || unicode.IsDigit(c) {
+			plainText += string(c)
+		} else {
+			plainText += " "
+		}
+	}
+	// Remove duplicates
+	plainText = strings.ToLower(plainText)
+	tokens := []string{}
+	for _, token := range strings.Split(plainText, " ") {
+		token = strings.TrimSpace(token)
+		if token == "" {
+			continue
+		}
+		if !slices.Contains(tokens, token) {
+			tokens = append(tokens, token)
+		}
+	}
+	return strings.Join(tokens, " ")
 }
 
 func (b BlogPost) fetchMetadata() Metadata {
