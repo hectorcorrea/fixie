@@ -118,17 +118,22 @@ func (b BlogPost) ToSearchEntry() string {
 }
 
 func (b BlogPost) SearchText() string {
-	// Extract all alphanumeric words
+	// Extract all alphanumeric words and a few selected special characters
 	plainText := ""
-	for _, c := range b.Content {
+	var prevChar rune
+	for _, c := range strings.ToLower(b.Content) {
 		if unicode.IsLetter(c) || unicode.IsDigit(c) {
+			plainText += string(c)
+		} else if c == '.' || c == '/' || c == '@' || c == ':' || c == '-' {
+			plainText += string(c)
+		} else if c == '#' && (prevChar == 'C' || prevChar == 'c') {
 			plainText += string(c)
 		} else {
 			plainText += " "
 		}
+		prevChar = c
 	}
 	// Remove duplicates
-	plainText = strings.ToLower(plainText)
 	tokens := []string{}
 	for _, token := range strings.Split(plainText, " ") {
 		token = strings.TrimSpace(token)
