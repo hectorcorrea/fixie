@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
-	"strings"
 )
 
 type BlogPosts []BlogPost
@@ -58,24 +57,4 @@ func (blogs BlogPosts) CreateRssPage(meta SiteMeta, filename string) {
 		fmt.Printf("ERROR producing RSS file: %s\r\n", err)
 	}
 	saveFile(filename, xml)
-}
-
-func (blogs BlogPosts) CreateSearchIndex(filename string) {
-	if len(blogs) == 0 {
-		return
-	}
-	fmt.Printf("Creating search file: %s\r\n", filename)
-
-	entries := []string{}
-	for _, blog := range blogs {
-		entry := fmt.Sprintf(`
-		{
-			"id": "%s",
-			"name": "%s",
-			"text": "%s"
-		}`, blog.LinkUrl(), blog.Title(), blog.SearchText())
-		entries = append(entries, entry)
-	}
-	text := fmt.Sprintf("var searchDocuments = [%s];", strings.Join(entries, ","))
-	saveFile(filename, text)
 }

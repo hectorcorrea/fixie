@@ -108,6 +108,15 @@ func (b BlogPost) MetadataFile() string {
 	return strings.TrimSuffix(b.Filename, ".md") + ".xml"
 }
 
+func (b BlogPost) ToSearchEntry() string {
+	entry := fmt.Sprintf(`{
+		"id": "%s",
+		"name": "%s",
+		"text": "%s"
+	}`, b.LinkUrl(), b.Title(), b.SearchText())
+	return entry
+}
+
 func (b BlogPost) SearchText() string {
 	// Extract all alphanumeric words
 	plainText := ""

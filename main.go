@@ -36,6 +36,7 @@ func processMarkdownFiles() {
 	layout := loadLayout(layoutFile)
 	siteMetadata := NewSiteMeta(layout)
 	blogs := BlogPosts{}
+	pages := BlogPosts{}
 
 	fmt.Printf("Processing .md files...\r\n")
 	filepath.WalkDir(".", func(filename string, d fs.DirEntry, err error) error {
@@ -47,12 +48,16 @@ func processMarkdownFiles() {
 		fmt.Printf("  %s\r\n", filename)
 		md2HtmlFile(filename, layout)
 
-		// Keep track of blog entries
 		isBlog := strings.HasPrefix(filename, "blog/")
 		if isBlog {
+			// blog post
 			blogPost := LoadBlogPost(filename)
 			blogPost.createRedirectFiles()
 			blogs.Append(blogPost)
+		} else {
+			// stand-alone page
+			page := LoadBlogPost(filename)
+			pages.Append(page)
 		}
 		return nil
 	})
@@ -63,16 +68,28 @@ func processMarkdownFiles() {
 		fmt.Printf("%d blog entries were processed\r\n", len(blogs))
 		blogs.CreateHomepage(layout, blogFile)
 		blogs.CreateRssPage(siteMetadata, rssFile)
-		//
-		//
-		//
-		// TODO: Include the pages that are not blogs on the index
-		//
-		//
-		//
-		blogs.CreateSearchIndex(searchIndexFile)
 	}
+
+	createSearchIndex(pages, blogs)
 	return
+}
+
+// Creates a JavaScript file that could be used to create a search index
+// with Lunr https://lunrjs.com/
+func createSearchIndex(pages, blogs BlogPosts) {
+	fmt.Printf("Creating search index file: %s\r\n", searchIndexFile)
+
+	entries := []string{}
+	for _, page := range pages {
+		entries = append(entries, page.ToSearchEntry())
+	}
+
+	for _, blog := range blogs {
+		entries = append(entries, blog.ToSearchEntry())
+	}
+
+	text := fmt.Sprintf("var searchDocuments = [%s];", strings.Join(entries, ","))
+	saveFile(searchIndexFile, text)
 }
 
 func loadLayout(layoutFile string) string {
