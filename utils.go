@@ -18,10 +18,21 @@ func md2HtmlFile(mdFile string, layout string) {
 func md2Html(layout string, content string) string {
 	var parser MarkdownParser
 	contentHtml := parser.ToHtml(content)
-	if layout == "" {
-		return contentHtml
+	if layout != "" {
+		// If there is layout merge the HTML content with the layout
+		contentHtml = strings.Replace(layout, "{{CONTENT}}", contentHtml, 1)
 	}
-	return strings.Replace(layout, "{{CONTENT}}", contentHtml, 1)
+
+	// If there is an HTML title tag in the original layout and there is a title in the markdown
+	// replace the original title with the one from the markdown
+	reTitle := regexp.MustCompile(`<title>(.*)</title>`)
+	originalTitle := regExpMatch(layout, reTitle)
+	markdownTitle := parser.Title(content)
+	if originalTitle != "" && markdownTitle != "" {
+		contentHtml = strings.Replace(contentHtml, "<title>"+originalTitle+"</title>", "<title>"+markdownTitle+"</title>", 1)
+	}
+
+	return contentHtml
 }
 
 func mdTitle(content string, defaultTitle string) string {
@@ -70,16 +81,7 @@ func dateFromString(value string) string {
 	return match
 }
 
-func sequenceFromString(value string) string {
-	reDate := regexp.MustCompile(`\d\d\d\d\-\d\d\-\d\d\-\d\d\d\d\d`)
-	match := string(reDate.Find([]byte(value)))
-	if len(match) >= 12 {
-		return match[11:]
-	}
-	return ""
-}
-
-// Returs the first match of an regex in the provided text
+// Returns the first match of an regex in the provided text
 func regExpMatch(text string, re *regexp.Regexp) string {
 	matches := re.FindStringSubmatch(text)
 	if len(matches) == 2 {
