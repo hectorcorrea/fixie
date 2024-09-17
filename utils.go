@@ -39,6 +39,13 @@ func md2Html(layout string, content string) string {
 		contentHtml = strings.Replace(contentHtml, oldHtml, newHtml, 1)
 	}
 
+	// TODO: Replace the canonical link on the HTML (<link rel="canonical" href="https://something" />)
+	// with the correct link for each page.
+	//
+	// The issue is that at this stage I don't know what base URL I should use, heck I don't even know
+	// the URL for this page (i.e. the one based from the Title of the post) so that complicates things
+	// a little bit. I might need to implement this logic as part of the blog/page processing code.
+
 	return contentHtml
 }
 
@@ -52,10 +59,8 @@ func mdTitle(content string, defaultTitle string) string {
 
 func fileExist(filename string) bool {
 	_, err := os.Stat(filename)
-	if errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	return true
+	notExist := errors.Is(err, os.ErrNotExist)
+	return !notExist
 }
 
 func readFile(filename string) string {

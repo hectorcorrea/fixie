@@ -27,7 +27,7 @@ func init() {
 func main() {
 	fmt.Printf("fixie - a one gear static site generator\r\n\r\n")
 	processMarkdownFiles()
-	if serverMode == true {
+	if serverMode {
 		server(port)
 	}
 }
@@ -71,7 +71,6 @@ func processMarkdownFiles() {
 	}
 
 	createSearchIndex(pages, blogs)
-	return
 }
 
 // Creates a JavaScript file that could be used to create a search index
