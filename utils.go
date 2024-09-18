@@ -49,14 +49,6 @@ func md2Html(layout string, content string) string {
 	return contentHtml
 }
 
-func mdTitle(content string, defaultTitle string) string {
-	parser := NewMarkdownParser(content)
-	if parser.Title() != "" {
-		return parser.Title()
-	}
-	return defaultTitle
-}
-
 func fileExist(filename string) bool {
 	_, err := os.Stat(filename)
 	notExist := errors.Is(err, os.ErrNotExist)

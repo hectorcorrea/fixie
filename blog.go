@@ -16,6 +16,7 @@ type BlogPost struct {
 	Filename string
 	Content  string
 	Metadata Metadata
+	mdParser MarkdownParser
 }
 
 type Metadata struct {
@@ -39,6 +40,7 @@ func LoadBlogPost(filename string) BlogPost {
 
 	blog := BlogPost{Filename: filename, Content: content}
 	blog.Metadata = blog.fetchMetadata()
+	blog.mdParser = NewMarkdownParser(content)
 	return blog
 }
 
@@ -85,7 +87,7 @@ func (b BlogPost) YearPosted() int {
 }
 
 func (b BlogPost) Summary() string {
-	return "TODO"
+	return b.mdParser.Description()
 }
 
 func (b BlogPost) DefaultTitle() string {
@@ -93,7 +95,10 @@ func (b BlogPost) DefaultTitle() string {
 }
 
 func (b BlogPost) Title() string {
-	return mdTitle(b.Content, b.DefaultTitle())
+	if b.mdParser.Title() == "" {
+		return b.DefaultTitle()
+	}
+	return b.mdParser.Title()
 }
 
 func (b BlogPost) LinkUrl() string {
@@ -154,7 +159,7 @@ func (b BlogPost) fetchMetadata() Metadata {
 	}
 	defer reader.Close()
 
-	byteValue, err := io.ReadAll(reader)
+	byteValue, _ := io.ReadAll(reader)
 	var metadata Metadata
 	xml.Unmarshal(byteValue, &metadata)
 	return metadata
