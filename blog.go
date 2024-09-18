@@ -20,14 +20,14 @@ type BlogPost struct {
 }
 
 type Metadata struct {
-	Title       string  `xml:"title"`     // Not used
-	Slug        string  `xml:"slug"`      // Used when calculating redirects for legacy posts
-	Summary     string  `xml:"summary"`   // Not used
-	CreatedOn   string  `xml:"createdOn"` // Used when file name does not have a date
-	UpdatedOn   string  `xml:"updatedOn"` // Not used
-	PostedOn    string  `xml:"postedOn"`  // Not used
-	OldSequence string  `xml:"oldSequence"`
-	Fields      []Field `xml:"fields"` // Used when calculating redirects for legacy posts
+	Title       string  `xml:"title"`       // Not used
+	Slug        string  `xml:"slug"`        // Used when calculating redirects for legacy posts
+	Summary     string  `xml:"summary"`     // Not used
+	CreatedOn   string  `xml:"createdOn"`   // Used when file name does not have a date
+	UpdatedOn   string  `xml:"updatedOn"`   // Not used
+	PostedOn    string  `xml:"postedOn"`    // Not used
+	OldSequence string  `xml:"oldSequence"` // Used when calculating redirects for legacy posts
+	Fields      []Field `xml:"fields"`      // Used when calculating redirects for legacy posts
 }
 
 type Field struct {
@@ -52,7 +52,7 @@ func (b BlogPost) DateCreated() string {
 
 	date := dateFromFilename(b.Filename)
 	if date != "" {
-		// Use the data part from the filename
+		// Use the date part from the filename
 		return date
 	}
 
@@ -67,7 +67,7 @@ func (b BlogPost) DatePosted() string {
 
 	date := dateFromFilename(b.Filename)
 	if date != "" {
-		// Use the data part from the filename
+		// Use the date part from the filename
 		return date
 	}
 
