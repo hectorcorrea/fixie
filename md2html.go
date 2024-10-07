@@ -5,13 +5,16 @@ import (
 	"strings"
 )
 
-var reBold, reItalic, reStrike, reLink, reCode, reImg *regexp.Regexp
+var reBold, reItalic, reStrike, reLink, reCode, reImg, reImgHtml *regexp.Regexp
 
 type MarkdownParser struct {
-	html  string
-	pre   bool
-	quote bool
-	li    bool
+	markdown     string   // original Markdown
+	html         string   // resulting HTML
+	title        string   // internal
+	descriptions []string // internal
+	pre          bool     // internal
+	quote        bool     // internal
+	li           bool     // internal
 }
 
 func init() {
@@ -42,17 +45,28 @@ func init() {
 
 	// ![image caption](http://somewhere.org/image.png)
 	reImg = regexp.MustCompile("!\\[([^\\]]*?)\\]\\((.*?)\\)")
+
+	// <img ... />
+	reImgHtml = regexp.MustCompile(`<img (.*) />`)
 }
 
-func (p MarkdownParser) ToHtml(markdown string) string {
+func NewMarkdownParser(markdown string) MarkdownParser {
+	parser := MarkdownParser{markdown: markdown}
+	parser.processMarkdown()
+	return parser
+}
+
+func (p *MarkdownParser) processMarkdown() {
 	p.html = ""
 	p.pre = false
 	p.quote = false
 	p.li = false
-	lines := strings.Split(markdown, "\n")
+	p.descriptions = []string{}
+	p.title = ""
+	lines := strings.Split(p.markdown, "\n")
 	for _, line := range lines {
 		if p.isQuote(line) {
-			if p.quote == true {
+			if p.quote {
 				// already in blockquote
 			} else {
 				// start a new blockquote
@@ -60,7 +74,7 @@ func (p MarkdownParser) ToHtml(markdown string) string {
 				p.quote = true
 			}
 		} else {
-			if p.quote == true {
+			if p.quote {
 				// end current blockquote
 				p.html += "</blockquote>\n"
 				p.quote = false
@@ -68,7 +82,7 @@ func (p MarkdownParser) ToHtml(markdown string) string {
 		}
 
 		if p.isListItem(line) {
-			if p.li == true {
+			if p.li {
 				// already inside a list
 			} else {
 				// start a new list
@@ -76,7 +90,7 @@ func (p MarkdownParser) ToHtml(markdown string) string {
 				p.li = true
 			}
 		} else {
-			if p.li == true {
+			if p.li {
 				// end current list
 				p.html += "</ul>\n"
 				p.li = false
@@ -87,6 +101,9 @@ func (p MarkdownParser) ToHtml(markdown string) string {
 
 		if p.isH1(l) {
 			p.html += "<h1>" + substr(l, 2) + "</h1>\n"
+			if p.title == "" {
+				p.title = chomp(strings.TrimPrefix(l, "# "))
+			}
 		} else if p.isH2(l) {
 			p.html += "<h2>" + substr(l, 3) + "</h2>\n"
 		} else if p.isH3(l) {
@@ -111,25 +128,34 @@ func (p MarkdownParser) ToHtml(markdown string) string {
 		} else {
 			if p.pre {
 				// we use the original line in pre to preserve spaces
-				p.html += p.inline(line, true) + "\n"
+				p.html += p.parsedLine(line, true) + "\n"
 			} else if p.quote {
-				p.html += p.inline(substr(l, 2), false) + "<br/>\n"
+				p.html += p.parsedLine(substr(l, 2), false) + "<br/>\n"
 			} else if p.li {
-				p.html += "<li>" + p.inline(substr(l, 2), false) + "\n"
+				p.html += "<li>" + p.parsedLine(substr(l, 2), false) + "\n"
 			} else {
-				p.html += "<p>" + p.inline(l, false) + "</p>\n"
+				// A regular paragraph
+				p.html += "<p>" + p.parsedLine(l, false) + "</p>\n"
+
+				// Aggregate the first few paragraps to use as the description
+				if len(p.descriptions) < 3 {
+					p.descriptions = append(p.descriptions, p.cleanLine(l))
+				}
 			}
 		}
 	}
+}
+
+func (p MarkdownParser) Html() string {
 	return p.html
 }
 
-func (p MarkdownParser) Title(markdown string) string {
-	lines := strings.Split(markdown, "\n")
-	if len(lines) > 0 && p.isH1(lines[0]) {
-		return chomp(strings.TrimPrefix(lines[0], "# "))
-	}
-	return ""
+func (p MarkdownParser) Title() string {
+	return p.title
+}
+
+func (p MarkdownParser) Description() string {
+	return strings.Join(p.descriptions, " ")
 }
 
 func (p MarkdownParser) isH1(line string) bool {
@@ -187,12 +213,22 @@ func (p MarkdownParser) isListItem(line string) bool {
 	return strings.HasPrefix(line, "* ")
 }
 
-func (p MarkdownParser) inline(line string, pre bool) string {
-	// TODO: encode & to &amp;
+func (p MarkdownParser) cleanLine(line string) string {
+	// Ditch HTML image tags (although we allow them in the Markdown
+	// we don't want it on the "clean lines")
+	line = reImgHtml.ReplaceAllString(line, " ")
+	line = strings.Replace(line, "<", "&lt;", -1)
+	line = strings.Replace(line, ">", "&gt;", -1)
+	line = strings.Replace(line, "\"", " ", -1)
+	return line
+}
+
+func (p MarkdownParser) parsedLine(line string, pre bool) string {
+	// Encode the < and > characters in the original Markdown...
 	line = strings.Replace(line, "<", "&lt;", -1)
 	line = strings.Replace(line, ">", "&gt;", -1)
 
-	// allow for <img ... />
+	// and then allow for <img ... />
 	line = strings.Replace(line, "&lt;img ", "<img ", -1)
 	line = strings.Replace(line, "/&gt;", "/>", -1)
 
@@ -204,6 +240,8 @@ func (p MarkdownParser) inline(line string, pre bool) string {
 		// don't do any extra processing if we are on code block
 		return line
 	}
+
+	// and finally convert the Markdown to HTML
 	line = reImg.ReplaceAllString(line, "<img src=\"$2\" alt=\"$1\" title=\"$1\" />")
 	line = reBold.ReplaceAllString(line, "<b>$2</b>")
 	line = reItalic.ReplaceAllString(line, "<i>$2</i>")

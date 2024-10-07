@@ -16,17 +16,18 @@ type BlogPost struct {
 	Filename string
 	Content  string
 	Metadata Metadata
+	mdParser MarkdownParser
 }
 
 type Metadata struct {
-	Title       string  `xml:"title"`     // Not used
-	Slug        string  `xml:"slug"`      // Used when calculating redirects for legacy posts
-	Summary     string  `xml:"summary"`   // Not used
-	CreatedOn   string  `xml:"createdOn"` // Used when file name does not have a date
-	UpdatedOn   string  `xml:"updatedOn"` // Not used
-	PostedOn    string  `xml:"postedOn"`  // Not used
-	OldSequence string  `xml:"oldSequence"`
-	Fields      []Field `xml:"fields"` // Used when calculating redirects for legacy posts
+	Title       string  `xml:"title"`       // Not used
+	Slug        string  `xml:"slug"`        // Used when calculating redirects for legacy posts
+	Summary     string  `xml:"summary"`     // Not used
+	CreatedOn   string  `xml:"createdOn"`   // Used when file name does not have a date
+	UpdatedOn   string  `xml:"updatedOn"`   // Not used
+	PostedOn    string  `xml:"postedOn"`    // Not used
+	OldSequence string  `xml:"oldSequence"` // Used when calculating redirects for legacy posts
+	Fields      []Field `xml:"fields"`      // Used when calculating redirects for legacy posts
 }
 
 type Field struct {
@@ -39,6 +40,7 @@ func LoadBlogPost(filename string) BlogPost {
 
 	blog := BlogPost{Filename: filename, Content: content}
 	blog.Metadata = blog.fetchMetadata()
+	blog.mdParser = NewMarkdownParser(content)
 	return blog
 }
 
@@ -50,7 +52,7 @@ func (b BlogPost) DateCreated() string {
 
 	date := dateFromFilename(b.Filename)
 	if date != "" {
-		// Use the data part from the filename
+		// Use the date part from the filename
 		return date
 	}
 
@@ -65,7 +67,7 @@ func (b BlogPost) DatePosted() string {
 
 	date := dateFromFilename(b.Filename)
 	if date != "" {
-		// Use the data part from the filename
+		// Use the date part from the filename
 		return date
 	}
 
@@ -85,7 +87,7 @@ func (b BlogPost) YearPosted() int {
 }
 
 func (b BlogPost) Summary() string {
-	return "TODO"
+	return b.mdParser.Description()
 }
 
 func (b BlogPost) DefaultTitle() string {
@@ -93,7 +95,10 @@ func (b BlogPost) DefaultTitle() string {
 }
 
 func (b BlogPost) Title() string {
-	return mdTitle(b.Content, b.DefaultTitle())
+	if b.mdParser.Title() == "" {
+		return b.DefaultTitle()
+	}
+	return b.mdParser.Title()
 }
 
 func (b BlogPost) LinkUrl() string {
@@ -154,7 +159,7 @@ func (b BlogPost) fetchMetadata() Metadata {
 	}
 	defer reader.Close()
 
-	byteValue, err := io.ReadAll(reader)
+	byteValue, _ := io.ReadAll(reader)
 	var metadata Metadata
 	xml.Unmarshal(byteValue, &metadata)
 	return metadata

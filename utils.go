@@ -16,29 +16,43 @@ func md2HtmlFile(mdFile string, layout string) {
 }
 
 func md2Html(layout string, content string) string {
-	var parser MarkdownParser
-	contentHtml := parser.ToHtml(content)
-	if layout == "" {
-		return contentHtml
+	parser := NewMarkdownParser(content)
+	contentHtml := parser.Html()
+	if layout != "" {
+		// If there is layout merge the HTML content with the layout
+		contentHtml = strings.Replace(layout, "{{CONTENT}}", contentHtml, 1)
 	}
-	return strings.Replace(layout, "{{CONTENT}}", contentHtml, 1)
-}
 
-func mdTitle(content string, defaultTitle string) string {
-	var parser MarkdownParser
-	title := parser.Title(content)
-	if title != "" {
-		return title
+	// Replace the Title in the original HTML with the one from the Markdown
+	reTitle := regexp.MustCompile(`<title>(.*)</title>`)
+	htmlTitle := regExpMatch(layout, reTitle)
+	if htmlTitle != "" && parser.Title() != "" {
+		contentHtml = strings.Replace(contentHtml, "<title>"+htmlTitle+"</title>", "<title>"+parser.Title()+"</title>", 1)
 	}
-	return defaultTitle
+
+	// Replace the Description in the original HTML with the one from the Markdown
+	reDescription := regexp.MustCompile(`<meta name="description" content="(.*)">`)
+	htmlDesc := regExpMatch(layout, reDescription)
+	if htmlDesc != "" && parser.Description() != "" {
+		oldHtml := `<meta name="description" content="` + htmlDesc + `">`
+		newHtml := `<meta name="description" content="` + parser.Description() + `">`
+		contentHtml = strings.Replace(contentHtml, oldHtml, newHtml, 1)
+	}
+
+	// TODO: Replace the canonical link on the HTML (<link rel="canonical" href="https://something" />)
+	// with the correct link for each page.
+	//
+	// The issue is that at this stage I don't know what base URL I should use, heck I don't even know
+	// the URL for this page (i.e. the one based from the Title of the post) so that complicates things
+	// a little bit. I might need to implement this logic as part of the blog/page processing code.
+
+	return contentHtml
 }
 
 func fileExist(filename string) bool {
 	_, err := os.Stat(filename)
-	if errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	return true
+	notExist := errors.Is(err, os.ErrNotExist)
+	return !notExist
 }
 
 func readFile(filename string) string {
@@ -70,16 +84,7 @@ func dateFromString(value string) string {
 	return match
 }
 
-func sequenceFromString(value string) string {
-	reDate := regexp.MustCompile(`\d\d\d\d\-\d\d\-\d\d\-\d\d\d\d\d`)
-	match := string(reDate.Find([]byte(value)))
-	if len(match) >= 12 {
-		return match[11:]
-	}
-	return ""
-}
-
-// Returs the first match of an regex in the provided text
+// Returns the first match of an regex in the provided text
 func regExpMatch(text string, re *regexp.Regexp) string {
 	matches := re.FindStringSubmatch(text)
 	if len(matches) == 2 {

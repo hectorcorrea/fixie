@@ -8,13 +8,13 @@
           <atom:link href="https://github.com/hectorcorrea/fixie" rel="self" type="application/rss+xml"></atom:link>
           <item>
               <title>Second</title>
-              <description>TODO</description>
+              <description>This is another blog post</description>
               <guid isPermaLink="true">/blog/2022-12-08/two</guid>
               <pubDate>Thu, 08 Dec 2022 00:00:00 +0000</pubDate>
           </item>
           <item>
               <title>One</title>
-              <description>TODO</description>
+              <description>this is one blog post</description>
               <guid isPermaLink="true">/blog/2020-11-19/one</guid>
               <pubDate>Thu, 19 Nov 2020 00:00:00 +0000</pubDate>
           </item>
