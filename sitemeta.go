@@ -6,7 +6,7 @@ type SiteMeta struct {
 	Title       string
 	Author      string
 	Description string
-	Link        string
+	BaseLink    string
 }
 
 // Extract site metadata from an HTML page
@@ -15,7 +15,7 @@ func NewSiteMeta(html string) SiteMeta {
 		Title:       htmlTitle(html),
 		Description: htmlMetaAttr(html, "description"),
 		Author:      htmlMetaAttr(html, "author"),
-		Link:        htmlLinkCanonical(html),
+		BaseLink:    htmlBaseLink(html),
 	}
 	return meta
 }
@@ -32,8 +32,8 @@ func htmlTitle(html string) string {
 	return regExpMatch(html, re)
 }
 
-// Extracts the canonical link value of an HTML page
-func htmlLinkCanonical(html string) string {
-	re := regexp.MustCompile(`<link rel="canonical" href="(.*)"`)
+// Extracts the base link value of an HTML page
+func htmlBaseLink(html string) string {
+	re := regexp.MustCompile(`<base href="(.*)"`)
 	return regExpMatch(html, re)
 }

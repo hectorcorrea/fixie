@@ -48,7 +48,7 @@ func (blogs BlogPosts) CreateRssPage(meta SiteMeta, filename string) {
 	}
 	fmt.Printf("Creating blog RSS: %s\r\n", filename)
 
-	rss := NewRss(meta.Title, meta.Description, meta.Link)
+	rss := NewRss(meta.Title, meta.Description, meta.BaseLink)
 	for _, blog := range blogs {
 		rss.Add(blog.Title(), blog.Summary(), blog.LinkUrl(), blog.DatePosted())
 	}
